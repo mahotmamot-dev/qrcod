@@ -1,43 +1,27 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <title>QR Scanner</title>
-    <!-- مسار JS -->
-    <script src="qrcod/qr-scanner.min.js"></script>
-    <style>
-        body { 
-            margin:0; 
-            font-family:sans-serif; 
-            display:flex; 
-            justify-content:center; 
-            align-items:center; 
-            height:100vh; 
-            background:#f5f5f5; 
-        }
-        video { 
-            width: 100%; 
-            max-width: 400px; 
-            border-radius:10px; 
-        }
-    </style>
+<meta charset="UTF-8">
+<title>QR Scanner</title>
+<style>
+  body { margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#eee; }
+  #reader { width: 100%; max-width: 500px; }
+</style>
 </head>
 <body>
-    <video id="video"></video>
 
-    <script>
-        // المسار الصحيح للـworker
-        QrScanner.WORKER_PATH = 'qrcod/worker.min.js';
+<div id="reader"></div>
 
-        const video = document.getElementById('video');
-        const scanner = new QrScanner(video, result => {
-            window.location.href = result; // تحويل تلقائي للرابط الموجود بالباركود
-        });
+<script src="qr-scanner.min.js"></script>
+<script>
+  // استخدام الكامرا الخلفية تلقائياً
+  const videoElem = document.getElementById('reader');
+  const qrScanner = new QrScanner(videoElem, result => {
+    // عند قراءة QR، نوجّه تلقائياً للرابط
+    window.location.href = result;
+  });
+  qrScanner.start();
+</script>
 
-        scanner.start().catch(e => {
-            document.body.innerHTML = "<p style='text-align:center;color:red;'>حدث خطأ في الوصول للكاميرا.<br>تأكد من صلاحيات الكاميرا والمتصفح.</p>";
-            console.error(e);
-        });
-    </script>
 </body>
 </html>
