@@ -1,26 +1,78 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>QR Scanner</title>
+<title>ماسح QR تلقائي</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#eee; }
-  #reader { width: 100%; max-width: 500px; }
+  body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f0f0f0;
+    font-family: Tahoma, Arial, sans-serif;
+  }
+  video {
+    width: 100%;
+    max-width: 450px;
+    border-radius: 12px;
+    border: 3px solid #c824E9;
+  }
+  #message {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
 
-<div id="reader"></div>
+<video id="video" muted playsinline></video>
+<div id="message">وجّه الكاميرا على رمز QR...</div>
 
-<script src="qr-scanner.min.js"></script>
+<!-- jsQR via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
 <script>
-  // استخدام الكامرا الخلفية تلقائياً
-  const videoElem = document.getElementById('reader');
-  const qrScanner = new QrScanner(videoElem, result => {
-    // عند قراءة QR، نوجّه تلقائياً للرابط
-    window.location.href = result;
-  });
-  qrScanner.start();
+const video = document.getElementById("video");
+const msg   = document.getElementById("message");
+
+// تشغيل الكاميرا الخلفية
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+.then(stream => {
+    video.srcObject = stream;
+    video.play();
+    scanLoop();
+})
+.catch(err => {
+    msg.innerText = "لا يمكن الوصول للكاميرا ➤ " + err.message;
+});
+
+// ماسح QR Loop
+function scanLoop() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        const canvas = document.createElement("canvas");
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+            msg.innerText = "تم قراءة QR! جاري التحويل...";
+            // توجيه تلقائي للرابط داخل QR
+            window.location.href = code.data;
+            return;
+        }
+    }
+    requestAnimationFrame(scanLoop);
+}
 </script>
 
 </body>
