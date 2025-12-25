@@ -2,76 +2,130 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>ماسح QR تلقائي</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مسح QR - 4U NETWORK</title>
 <style>
-  body {
+body {
     margin: 0;
+    font-family: Tahoma, Arial, sans-serif;
+    background: #c824E9;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    height: 100vh;
-    background: #f0f0f0;
-    font-family: Tahoma, Arial, sans-serif;
-  }
-  video {
-    width: 100%;
-    max-width: 450px;
-    border-radius: 12px;
-    border: 3px solid #c824E9;
-  }
-  #message {
-    margin-top: 15px;
-    font-size: 18px;
-    color: #333;
+    justify-content: center;
+    color: #fff;
+}
+
+.box {
+    background: #fff;
+    width: 95%;
+    max-width: 480px;
+    padding: 30px;
+    border-radius: 25px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
     text-align: center;
-  }
+    color: #000;
+}
+
+.logo img {
+    height: 150px;
+    width: auto;
+    margin-bottom: 20px;
+    border-radius: 20px;
+}
+
+h2 { margin-bottom: 20px; color: #333; }
+
+#video {
+    width: 100%;
+    border-radius: 14px;
+    display: none;
+}
+
+#startScan {
+    display: block;
+    width: 90%;
+    max-width: 320px;
+    margin: 10px auto;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background-color: #c824E9;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#startScan:hover { opacity: 0.9; }
+
+.footer {
+    margin-top: 20px;
+    font-size: 13px;
+    color: #777;
+}
 </style>
 </head>
 <body>
 
-<video id="video" muted playsinline></video>
-<div id="message">وجّه الكاميرا على رمز QR...</div>
+<div class="box">
+    <div class="logo">
+        <img src="logo.png" alt="Logo">
+    </div>
 
-<!-- jsQR via CDN -->
+    <h2>مسح رمز QR</h2>
+    <button id="startScan">ابدأ المسح</button>
+    <video id="video" muted playsinline></video>
+</div>
+
+<div class="footer">© <span id="year"></span> جميع الحقوق محفوظة – مثنى الجنابي</div>
+
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-
 <script>
-const video = document.getElementById("video");
-const msg   = document.getElementById("message");
+document.getElementById("year").textContent = new Date().getFullYear();
 
-// تشغيل الكاميرا الخلفية
-navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-.then(stream => {
-    video.srcObject = stream;
-    video.play();
-    scanLoop();
-})
-.catch(err => {
-    msg.innerText = "لا يمكن الوصول للكاميرا ➤ " + err.message;
+const video = document.getElementById('video');
+const startBtn = document.getElementById('startScan');
+let scanning = false;
+
+startBtn.addEventListener('click', () => {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+        video.srcObject = stream;
+        video.style.display = 'block';
+        video.play();
+        startBtn.style.display = 'none';
+        scanning = true;
+        scanLoop();
+    })
+    .catch(err => alert("لا يمكن الوصول للكاميرا: " + err.message));
 });
 
-// ماسح QR Loop
 function scanLoop() {
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        const canvas = document.createElement("canvas");
-        canvas.width  = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-        if (code) {
-            msg.innerText = "تم قراءة QR! جاري التحويل...";
-            // توجيه تلقائي للرابط داخل QR
-            window.location.href = code.data;
-            return;
-        }
+    if (!scanning) return;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, canvas.width, canvas.height);
+    if (code) {
+        scanning = false;
+        stopVideo();
+        window.location.href = code.data; // تحويل تلقائي للرابط الموجود في QR
+    } else {
+        requestAnimationFrame(scanLoop);
     }
-    requestAnimationFrame(scanLoop);
+}
+
+function stopVideo() {
+    const stream = video.srcObject;
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    video.srcObject = null;
 }
 </script>
 
