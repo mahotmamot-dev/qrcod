@@ -3,77 +3,126 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Scanner</title>
+<title>QR Scanner - 4U NETWORK</title>
 <style>
 body {
-    margin:0;
+    margin: 0;
     font-family: Tahoma, Arial, sans-serif;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-    background:#c824E9;
-    flex-direction:column;
+    background: #c824E9;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
+
 .box {
-    background:#fff;
-    padding:20px;
-    border-radius:20px;
-    text-align:center;
-    max-width:400px;
-    width:95%;
-    box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    background: #fff;
+    width: 95%;
+    max-width: 500px;
+    padding: 30px;
+    border-radius: 25px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    text-align: center;
 }
+
+.logo img {
+    width: auto;
+    height: 180px;
+    max-width: 100%;
+    margin-bottom: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+h2 {
+    margin: 15px 0;
+    color: #333;
+    font-size: 22px;
+}
+
 button {
-    padding:15px 20px;
-    font-size:18px;
-    border:none;
-    border-radius:12px;
-    cursor:pointer;
-    background:#FF6F00;
-    color:#fff;
-    margin-bottom:15px;
-    transition:0.3s;
+    display: block;
+    width: 90%;
+    max-width: 320px;
+    margin: 10px auto;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-size: 19px;
+    cursor: pointer;
+    text-align: center;
+    color: #fff;
+    background-color: #c824E9;
+    transition: 0.3s;
 }
-button:hover {
-    opacity:0.85;
+
+button:hover { opacity: 0.9; }
+
+#qr-video {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 14px;
+    margin-top: 20px;
+    display: none;
 }
-video {
-    width:100%;
-    border-radius:12px;
-    display:none;
+
+.footer {
+    margin-top: 20px;
+    font-size: 13px;
+    color: #c824E9;
+    font-weight: 600;
 }
 </style>
 </head>
 <body>
+
 <div class="box">
-    <h2>ماسح QR</h2>
+    <div class="logo">
+        <img src="logo.png" alt="Logo">
+    </div>
+
+    <h2>مسح QR</h2>
+
     <button id="startScan">ابدأ المسح</button>
-    <video id="video" autoplay></video>
-    <p id="message" style="color:red;"></p>
+
+    <video id="qr-video"></video>
+
+    <div class="footer" id="footer-copy">
+        جميع الحقوق محفوظة © 
+    </div>
 </div>
 
-<!-- CDN لمكتبة QR Scanner -->
-<script src="https://unpkg.com/qr-scanner/qr-scanner.umd.min.js"></script>
+<!-- QR Scanner CDN -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 <script>
-const video = document.getElementById('video');
-const button = document.getElementById('startScan');
-const message = document.getElementById('message');
+document.getElementById("footer-copy").innerHTML += new Date().getFullYear() + " – مثنى الجنابي";
 
-const scanner = new QrScanner(video, result => {
-    window.location.href = result;  // تحويل تلقائي للرابط بعد قراءة QR
-});
+const startBtn = document.getElementById('startScan');
+const videoElement = document.getElementById('qr-video');
+let html5QrcodeScanner;
 
-button.addEventListener('click', async () => {
-    try {
-        await scanner.start();   // يبدأ الماسح عند الضغط
-        video.style.display = 'block';
-        message.textContent = '';
-    } catch(e) {
-        message.textContent = 'لم يتم منح إذن الوصول للكاميرا. تحقق من إعدادات المتصفح.';
-        console.error(e);
-    }
+startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+    videoElement.style.display = 'block';
+
+    html5QrcodeScanner = new Html5Qrcode("qr-video");
+
+    html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+            // عند قراءة QR يوجّه المستخدم تلقائيًا للرابط
+            window.location.href = qrCodeMessage;
+            html5QrcodeScanner.stop();
+        },
+        errorMessage => {
+            // يمكن تجاهل الأخطاء البسيطة
+        }
+    ).catch(err => {
+        alert("حدث خطأ أثناء الوصول للكاميرا: " + err);
+    });
 });
 </script>
+
 </body>
 </html>
